@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<Extension>
+    <Name>DigGame</Name>
+    <Plugins>
+        <Plugin>
+            <Handle>TimeStampPlugin</Handle>
+            <Path>utils/timestampplugin.js</Path>
+        </Plugin>
+        <Plugin>
+            <Handle>DiggingPlugin</Handle>
+            <Path>digging/diggingplugin.js</Path>
+        </Plugin>
+    </Plugins>
+</Extension>
