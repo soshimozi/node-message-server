@@ -3,6 +3,7 @@ var messages = {
 		connect:'connect',
 		pluginMessageEvent:'pluginMessageEvent',
 		joinRoomEvent:'joinRoomEvent',
+		pluginMessage:'pluginMessage',
 		loginResponse:'loginResponse'
 		};
 

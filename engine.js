@@ -24,16 +24,11 @@ var engine = function() {
 		var room = this.roommanager.getRoom(name);
 		if (room != null) {
 
-			for (var pluginHandle in room.plugins) {
-				var plugin = room.plugins[pluginHandle];
-				plugin.userExit(this, socket);
-			}
-			
+
 			socket.leave(room.name);
-			socket.room = null;
+			room.userExit(socket);
 			
-			room.removeUser(socket.user);
-				
+			socket.room = null;
 			socket.emit(messages.leaveRoomEvent, JSON.stringify({result:true, room:{name:name}}));
 		}
 	};
@@ -45,10 +40,7 @@ var engine = function() {
 			socket.join(room.name);
 			socket.room = room;
 
-			console.log('room found:');
-			console.log(room);
-			
-			room.userEntered(socket.user);
+			room.userEnter(socket);
 			socket.emit(messages.joinRoomEvent, JSON.stringify({result:true, room:{name:name}}));
 		}
 	};
@@ -80,14 +72,20 @@ var engine = function() {
 	};
 	
 	this.handleLoginRequest = function(socket, request) {
+		
 		if (!this.isClientLoggedIn(socket)) {
 		
-			var accepted = this.usermanager.addUser(request.user);
+			var accepted = this.usermanager.addUser(request.user, socket);
 			if (accepted) {
 				socket.user = this.usermanager.getUser(request.user);
+			} else {
+				console.log('duplicate login detected');
 			}
 			
+			
 			socket.emit(messages.loginResponse, JSON.stringify({accepted:accepted}));
+		} else {
+			//socket.user = 
 		}
 	};
 	
@@ -132,6 +130,28 @@ var engine = function() {
 		
 	};
 
+};
+
+engine.prototype.sendPluginMessageToUsers = function(users, message) {
+	
+    var todo = users.concat();
+    
+    var self = this;
+
+    setTimeout(function() {
+        self.sendPluginMessageToUser(todo.shift(), message);
+        if(todo.length > 0) {
+            setTimeout(arguments.callee, 1);
+        }
+    }, 1);
+
+};
+
+engine.prototype.sendPluginMessageToUser = function(player, message) {
+	var user = this.usermanager.getUser(player);
+	if (user != null) {
+		user.client.emit(messages.pluginMessage, JSON.stringify(message));
+	}
 };
 
 engine.prototype.isClientLoggedIn = function(client) {

@@ -3,53 +3,93 @@
 <head>
 	<script src="/socket.io/socket.io.js"></script>
 	<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.6.4/jquery.min.js"></script>
+	<script src='/javascripts/bitwisegames/sylvester.js'></script>
+	<script src='/javascripts/bitwisegames/bitwisegames.namespace.js'></script>
+	<script src='/javascripts/bitwisegames/bitwisegames.keyboard.js'></script>
+	<script src='/javascripts/bitwisegames/bitwisegames.inputhelper.js'></script>
+	<script src='/javascripts/bitwisegames/bitwisegames.frameanimation.js'></script>
+	<script src='/javascripts/bitwisegames/bitwisegames.animatedsprite.js'></script>
+	<script src='/javascripts/bitwisegames/bitwisegames.gametime.js'></script>
+	<script src="/javascripts/arrayhelper.js"></script>
+	<script src="/javascripts/bufferloader.js"></script>
+	<script src='/javascripts/elements/trowel.js'></script>
+	<script src='/javascripts/elements/item.js'></script>
+	<script src='/javascripts/elements/textsprite.js'></script>
 	<script src="/javascripts/handlers.js"></script>
-	<script src="/javascripts/client.js"></script>
+	<script src="/javascripts/server.js"></script>
+	<script src="/javascripts/eventtarget.js"></script>
+	<script src="/javascripts/gameflow.js"></script>
+	<script src="/javascripts/diggame.js"></script>
 	<script src="/lib/messages.js"></script>
+	<script src="/lib/pluginconstants.js"></script>
+	
+	<style type="text/css">
+		.userlist ul li { 
+			list-style-image: none;
+			list-style-type: none;
+		}
+	</style>
 </head>
 <body>
-	<div style="float:left;width:100px;border-right:1px solid black;height:300px;padding:10px;overflow:scroll-y;">
+
+	<div style="float:left;width:150px;border-right:1px solid black;padding:10px;overflow:scroll-y;">
 		<b>USERS</b>
-		<div id="users"></div>
+		<div id="users" class='userlist'></div>
 	</div>
-	<div style="float:left;width:300px;height:250px;overflow:scroll-y;padding:10px;">
-		<div id="conversation"></div>
-		<input id="data" style="width:200px;" />
-		<input type="button" id="datasend" value="send" />
+	<div id="canvas-holder" style="float:left;margin-left:10px;">
+		<canvas id="game" width="640" height="480" style="cursor:none;"></canvas>
+		<div id="output" style="background-color:black;color:white;width:640px;height:200px;overflow-y:scroll"></div>
 	</div>
+	<div style="clear:both;"></div>
+	
 		
 	<script>
 	
 		var host = 'http://www.volcansoft.com';
 		var port = 8080;
-		
-		var client = new client();
-		client.registerHandler(Handlers.Connect, function(socket, request) {
-			client.login('user' + Math.floor((Math.random()*1000)+1));
-		});
-		
-		client.registerHandler(Handlers.LoginResponse, function(socket, message) {
-			
-			if (message.accepted) {
-				
-				console.log('joining room');
-				
-				// we were accepted so let's rock
-				var plugin = client.createPlugin('DigGame', 'DiggingPlugin', 'DiggingPlugin');
-				client.createRoom('', 'lobby', [plugin]);
-			}
-		});
-		
-		client.registerHandler(Handlers.JoinRoomEvent, function(socket, message) {
-			console.log('join room!');
-			client.sendPluginMessage('DiggingPlugin', 'lobby', {action:'init_me'});
-		});
-		
-		client.registerHandler(Handlers.PluginMessageEvent, function(socket, message) {
-			alert('woot! woot!');
-		});	
-		
-		client.connect(host, port);
+		var fps = 60;
+
+		window.addEventListener(
+				'load', 
+				function() {
+					
+					var canvas = $("#game").get(0);
+					var game = new DigGame(canvas, '#output', canvas.width, canvas.height);
+					
+					function refreshUserList() {
+						console.log('refresh user list');
+						
+						$('#users').html('');
+						
+						var ul = $('#users').add('div');
+						
+						var items = [];
+						for(var name in game.playerList) {
+							items.push('<div><span>' + name + ', score: ' + game.playerList[name].score + '</span></div>');
+						}
+						
+						$('#users').append(items.join(''));
+					}
+
+					game.addListener('refreshUserList', refreshUserList);
+					
+					// this starts the whole ball rolling (we hope)
+					var flow = new GameFlow(host, port, game);
+					
+					var context = canvas.getContext("2d");
+					setInterval(function() {
+						game.draw(context);
+					}, 1000/fps);
+					
+					  try {
+						    var audiocontext = new webkitAudioContext();
+						  }
+						  catch(e) {
+						    alert('Web Audio API is not supported in this browser');
+						  }					
+	   		}, 
+	   		false
+	   );
 		
 	</script>
 </body>
